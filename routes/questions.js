@@ -33,23 +33,39 @@ router.post('/', (req, res) => {
 });
 
 // GET / — Fetch all questions with filters
+// GET / — Fetch all questions with filters
 router.get('/', (req, res) => {
   let sql = 'SELECT * FROM questions WHERE 1=1';
   const values = [];
 
-  if (req.query.tag) {
-    sql += ' AND tags LIKE ?';
-    values.push(`%${req.query.tag}%`);
+  if (req.query.subject) {
+    sql += ' AND subject = ?';
+    values.push(req.query.subject);
   }
 
-  if (req.query.difficulty) {
-    sql += ' AND difficulty = ?';
-    values.push(req.query.difficulty);
+  if (req.query.topic) {
+    sql += ' AND topic = ?';
+    values.push(req.query.topic);
   }
 
-  if (req.query.keyword) {
-    sql += ' AND question_text LIKE ?';
-    values.push(`%${req.query.keyword}%`);
+  if (req.query.subtopic) {
+    sql += ' AND subtopic = ?';
+    values.push(req.query.subtopic);
+  }
+
+  if (req.query.source) {
+    sql += ' AND source = ?';
+    values.push(req.query.source);
+  }
+
+  if (req.query.question_type) {
+    sql += ' AND question_type = ?';
+    values.push(req.query.question_type);
+  }
+
+  if (req.query.format) {
+    sql += ' AND format = ?';
+    values.push(req.query.format);
   }
 
   sql += ' ORDER BY created_at DESC';
