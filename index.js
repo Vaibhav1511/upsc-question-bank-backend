@@ -9,8 +9,9 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors({
-  origin: 'https://upsc-question-bank-frontend.vercel.app', // allow Vercel frontend
+  origin: ['https://upsc-question-bank-frontend.vercel.app'], // allow Vercel frontend
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
+allowedHeaders: ['Content-Type'],
   credentials: true
 }));
 
