@@ -1,9 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
-const puppeteer = require('puppeteer');
-const fs = require('fs');
-const path = require('path');
+const pdf = require('html-pdf');
 
 // POST / — Add a new question
 router.post('/', (req, res) => {
@@ -124,8 +122,8 @@ router.delete('/:id', (req, res) => {
   });
 });
 
-// POST /export — Export selected questions as PDF
-router.post('/export', async (req, res) => {
+// POST /export — Export selected questions as PDF using html-pdf
+router.post('/export', (req, res) => {
   const { ids } = req.body;
 
   if (!ids || !Array.isArray(ids)) {
@@ -134,57 +132,51 @@ router.post('/export', async (req, res) => {
 
   const sql = `SELECT * FROM questions WHERE id IN (?)`;
 
-  db.query(sql, [ids], async (err, results) => {
+  db.query(sql, [ids], (err, results) => {
     if (err) {
       console.error("❌ Failed to fetch questions for export:", err);
       return res.status(500).send("Export failed.");
     }
 
-    try {
-      const htmlContent = `
-        <html>
-        <head>
-          <style>
-            body { font-family: sans-serif; padding: 20px; }
-            .question { margin-bottom: 30px; }
-            .options { margin-left: 20px; }
-          </style>
-        </head>
-        <body>
-          ${results.map((q, i) => `
-            <div class="question">
-              <strong>Q${i + 1}:</strong> ${q.question_text}
-              <div class="options">
-                <p>A. ${q.option_a}</p>
-                <p>B. ${q.option_b}</p>
-                <p>C. ${q.option_c}</p>
-                <p>D. ${q.option_d}</p>
-                <p><strong>Answer:</strong> ${q.correct_option}</p>
-                <p><em>Explanation:</em> ${q.explanation}</p>
-              </div>
+    const htmlContent = `
+      <html>
+      <head>
+        <style>
+          body { font-family: sans-serif; padding: 20px; }
+          .question { margin-bottom: 30px; }
+          .options { margin-left: 20px; }
+        </style>
+      </head>
+      <body>
+        ${results.map((q, i) => `
+          <div class="question">
+            <strong>Q${i + 1}:</strong> ${q.question_text}
+            <div class="options">
+              <p>A. ${q.option_a}</p>
+              <p>B. ${q.option_b}</p>
+              <p>C. ${q.option_c}</p>
+              <p>D. ${q.option_d}</p>
+              <p><strong>Answer:</strong> ${q.correct_option}</p>
+              <p><em>Explanation:</em> ${q.explanation}</p>
             </div>
-          `).join('')}
-        </body>
-        </html>
-      `;
+          </div>
+        `).join('')}
+      </body>
+      </html>
+    `;
 
-      const browser = await puppeteer.launch({
-        headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
-      });
+    const options = { format: 'A4' };
 
-      const page = await browser.newPage();
-      await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
-      const pdfBuffer = await page.pdf({ format: 'A4' });
-      await browser.close();
+    pdf.create(htmlContent, options).toBuffer((err, buffer) => {
+      if (err) {
+        console.error("❌ PDF generation failed:", err);
+        return res.status(500).send("PDF generation failed.");
+      }
 
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', 'attachment; filename=question-bank.pdf');
-      res.send(pdfBuffer);
-    } catch (pdfError) {
-      console.error("❌ PDF generation failed:", pdfError);
-      res.status(500).send("PDF generation failed.");
-    }
+      res.send(buffer);
+    });
   });
 });
 
