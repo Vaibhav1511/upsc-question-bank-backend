@@ -1,25 +1,16 @@
-// routes/questions.js
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const puppeteer = require('puppeteer');
+const fs = require('fs');
+const path = require('path');
 
+// POST / — Add a new question
 router.post('/', (req, res) => {
   const {
-    question_text,
-    option_a,
-    option_b,
-    option_c,
-    option_d,
-    correct_option,
-    explanation,
-    tags,
-    difficulty,
-    image_url,
-    subject,
-    topic,
-    subtopic,
-    question_type,
-    format
+    question_text, option_a, option_b, option_c, option_d, correct_option,
+    explanation, tags, difficulty, image_url, subject, topic,
+    subtopic, question_type, format
   } = req.body;
 
   const sql = `
@@ -29,21 +20,9 @@ router.post('/', (req, res) => {
   `;
 
   const values = [
-    question_text,
-    option_a,
-    option_b,
-    option_c,
-    option_d,
-    correct_option,
-    explanation,
-    tags,
-    difficulty,
-    image_url,
-    subject,
-    topic,
-    subtopic,
-    question_type,
-    format
+    question_text, option_a, option_b, option_c, option_d, correct_option,
+    explanation, tags, difficulty, image_url, subject, topic,
+    subtopic, question_type, format
   ];
 
   db.query(sql, values, (err, result) => {
@@ -55,11 +34,7 @@ router.post('/', (req, res) => {
   });
 });
 
-
-
-module.exports = router;
-
-// GET /questions — fetch all questions
+// GET / — Fetch all questions with filters
 router.get('/', (req, res) => {
   let sql = 'SELECT * FROM questions WHERE 1=1';
   const values = [];
@@ -91,66 +66,28 @@ router.get('/', (req, res) => {
   });
 });
 
-
-// PUT /questions/:id — update a question
+// PUT /:id — Update a question
 router.put('/:id', (req, res) => {
   const {
-    question_text,
-    option_a,
-    option_b,
-    option_c,
-    option_d,
-    correct_option,
-    explanation,
-    tags,
-    difficulty,
-    image_url,
-    subject,
-    topic,
-    subtopic,
-    question_type,
-    format
+    question_text, option_a, option_b, option_c, option_d, correct_option,
+    explanation, tags, difficulty, image_url, subject, topic,
+    subtopic, question_type, format
   } = req.body;
 
   const questionId = req.params.id;
 
   const sql = `
     UPDATE questions SET 
-      question_text = ?, 
-      option_a = ?, 
-      option_b = ?, 
-      option_c = ?, 
-      option_d = ?, 
-      correct_option = ?, 
-      explanation = ?, 
-      tags = ?, 
-      difficulty = ?, 
-      image_url = ?, 
-      subject = ?, 
-      topic = ?, 
-      subtopic = ?, 
-      question_type = ?, 
-      format = ?
+      question_text = ?, option_a = ?, option_b = ?, option_c = ?, option_d = ?, correct_option = ?, 
+      explanation = ?, tags = ?, difficulty = ?, image_url = ?, subject = ?, topic = ?, 
+      subtopic = ?, question_type = ?, format = ?
     WHERE id = ?
   `;
 
   const values = [
-    question_text,
-    option_a,
-    option_b,
-    option_c,
-    option_d,
-    correct_option,
-    explanation,
-    tags,
-    difficulty,
-    image_url,
-    subject,
-    topic,
-    subtopic,
-    question_type,
-    format,
-    questionId
+    question_text, option_a, option_b, option_c, option_d, correct_option,
+    explanation, tags, difficulty, image_url, subject, topic,
+    subtopic, question_type, format, questionId
   ];
 
   db.query(sql, values, (err, result) => {
@@ -167,8 +104,7 @@ router.put('/:id', (req, res) => {
   });
 });
 
-
-// DELETE /questions/:id — delete a question
+// DELETE /:id — Delete a question
 router.delete('/:id', (req, res) => {
   const questionId = req.params.id;
 
@@ -188,11 +124,7 @@ router.delete('/:id', (req, res) => {
   });
 });
 
-const puppeteer = require('puppeteer');
-const fs = require('fs');
-const path = require('path');
-
-// POST /export — generate PDF from selected questions
+// POST /export — Export selected questions as PDF
 router.post('/export', async (req, res) => {
   const { ids } = req.body;
 
@@ -208,43 +140,52 @@ router.post('/export', async (req, res) => {
       return res.status(500).send("Export failed.");
     }
 
-    const htmlContent = `
-      <html>
-      <head>
-        <style>
-          body { font-family: sans-serif; padding: 20px; }
-          .question { margin-bottom: 30px; }
-          .options { margin-left: 20px; }
-        </style>
-      </head>
-      <body>
-        ${results.map((q, i) => `
-          <div class="question">
-            <strong>Q${i + 1}:</strong> ${q.question_text}
-            <div class="options">
-              <p>A. ${q.option_a}</p>
-              <p>B. ${q.option_b}</p>
-              <p>C. ${q.option_c}</p>
-              <p>D. ${q.option_d}</p>
-              <p><strong>Answer:</strong> ${q.correct_option}</p>
-              <p><em>Explanation:</em> ${q.explanation}</p>
+    try {
+      const htmlContent = `
+        <html>
+        <head>
+          <style>
+            body { font-family: sans-serif; padding: 20px; }
+            .question { margin-bottom: 30px; }
+            .options { margin-left: 20px; }
+          </style>
+        </head>
+        <body>
+          ${results.map((q, i) => `
+            <div class="question">
+              <strong>Q${i + 1}:</strong> ${q.question_text}
+              <div class="options">
+                <p>A. ${q.option_a}</p>
+                <p>B. ${q.option_b}</p>
+                <p>C. ${q.option_c}</p>
+                <p>D. ${q.option_d}</p>
+                <p><strong>Answer:</strong> ${q.correct_option}</p>
+                <p><em>Explanation:</em> ${q.explanation}</p>
+              </div>
             </div>
-          </div>
-        `).join('')}
-      </body>
-      </html>
-    `;
+          `).join('')}
+        </body>
+        </html>
+      `;
 
-    const browser = await puppeteer.launch();
-    const page = await browser.newPage();
-    await page.setContent(htmlContent);
-    const pdfBuffer = await page.pdf({ format: 'A4' });
-    await browser.close();
+      const browser = await puppeteer.launch({
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+      });
 
-    // Set response headers for download
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'attachment; filename=question-bank.pdf');
-    res.send(pdfBuffer);
+      const page = await browser.newPage();
+      await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+      const pdfBuffer = await page.pdf({ format: 'A4' });
+      await browser.close();
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'attachment; filename=question-bank.pdf');
+      res.send(pdfBuffer);
+    } catch (pdfError) {
+      console.error("❌ PDF generation failed:", pdfError);
+      res.status(500).send("PDF generation failed.");
+    }
   });
 });
 
+module.exports = router;
