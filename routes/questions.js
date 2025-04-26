@@ -35,40 +35,41 @@ router.post('/', (req, res) => {
 // GET / — Fetch all questions with filters
 // GET / — Fetch all questions with filters
 router.get('/', (req, res) => {
-  let sql = 'SELECT * FROM questions WHERE 1=1';
+let sql = 'SELECT * FROM questions WHERE 1=1';
   const values = [];
 
   if (req.query.subject) {
     sql += ' AND subject = ?';
     values.push(req.query.subject);
   }
-
   if (req.query.topic) {
     sql += ' AND topic = ?';
     values.push(req.query.topic);
   }
-
   if (req.query.subtopic) {
     sql += ' AND subtopic = ?';
     values.push(req.query.subtopic);
   }
-
   if (req.query.source) {
     sql += ' AND source = ?';
     values.push(req.query.source);
   }
-
   if (req.query.question_type) {
     sql += ' AND question_type = ?';
     values.push(req.query.question_type);
   }
-
   if (req.query.format) {
     sql += ' AND format = ?';
     values.push(req.query.format);
   }
 
   sql += ' ORDER BY created_at DESC';
+
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 20;
+  const offset = (page - 1) * limit;
+
+  sql += ` LIMIT ${limit} OFFSET ${offset}`;
 
   db.query(sql, values, (err, results) => {
     if (err) {
