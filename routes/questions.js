@@ -85,7 +85,7 @@ router.put('/:id', (req, res) => {
   const {
     question_text, option_a, option_b, option_c, option_d, correct_option,
     explanation, tags, difficulty, image_url, subject, topic,
-    subtopic, question_type, format
+    subtopic, question_type, format, source
   } = req.body;
 
   const questionId = req.params.id;
@@ -94,14 +94,14 @@ router.put('/:id', (req, res) => {
     UPDATE questions SET 
       question_text = ?, option_a = ?, option_b = ?, option_c = ?, option_d = ?, correct_option = ?, 
       explanation = ?, tags = ?, difficulty = ?, image_url = ?, subject = ?, topic = ?, 
-      subtopic = ?, question_type = ?, format = ?
+      subtopic = ?, question_type = ?, format = ?, source = ?
     WHERE id = ?
   `;
 
   const values = [
     question_text, option_a, option_b, option_c, option_d, correct_option,
     explanation, tags, difficulty, image_url, subject, topic,
-    subtopic, question_type, format, questionId
+    subtopic, question_type, format, source, questionId
   ];
 
   db.query(sql, values, (err, result) => {
